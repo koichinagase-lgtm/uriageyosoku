@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#8C1D23">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>ONI &amp; Co. 売上着地予測</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --red:#8C1D23; --red-dark:#6E1010; --rice:#FAF7EF; --ivory:#FDFEF0;
+  --ink:#1A1A1A; --muted:#8A7E72; --line:#E2D9CC; --red2:#B8484D; --card:#FFFFFF;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{margin:0;}
+body{background:var(--rice);color:var(--ink);font-family:"Noto Sans JP","Hiragino Sans","Yu Gothic",sans-serif;line-height:1.7;min-height:100vh;padding:0 0 env(safe-area-inset-bottom);}
+.wrap{max-width:480px;margin:0 auto;padding:0 18px 36px;}
+header{background:var(--red);color:var(--ivory);padding:calc(18px + env(safe-area-inset-top)) 18px 20px;text-align:center;border-radius:0 0 22px 22px;margin:0 0 20px;}
+.brandwrap{max-width:480px;margin:0 auto;}
+.wordmark{font-family:"Cormorant Garamond",Georgia,serif;font-weight:700;font-size:24px;letter-spacing:.04em;line-height:1;}
+.app-title{font-size:20px;font-weight:700;margin-top:8px;}
+.app-sub{font-size:11px;opacity:.82;margin-top:5px;}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px 16px;box-shadow:0 10px 26px rgba(120,40,30,.08);margin-bottom:16px;}
+label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:0 0 7px;}
+.field{margin-bottom:16px;}
+.field:last-child{margin-bottom:0;}
+input[type="date"],input[type="time"],input[type="number"]{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:14px;font-size:17px;color:var(--ink);background:var(--rice);font-family:inherit;font-weight:700;}
+input:focus{outline:none;border-color:var(--red);background:#fff;}
+.weekday-badge{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:99px;background:var(--red);color:var(--ivory);font-size:12px;font-weight:700;vertical-align:middle;}
+.reg-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.reg-tag{display:block;font-size:12px;font-weight:700;color:var(--red);margin-bottom:5px;}
+.amount-row{position:relative;}
+.amount-row .yen{position:absolute;right:12px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:13px;font-weight:700;pointer-events:none;}
+.amount-row input{padding-right:30px;}
+.total-row{display:flex;align-items:center;justify-content:space-between;margin-top:14px;padding-top:14px;border-top:1px solid var(--line);}
+.total-row span{font-size:12px;font-weight:700;color:var(--muted);}
+.total-row b{font-size:22px;font-weight:700;color:var(--red);font-family:"Noto Sans JP",sans-serif;}
+/* result */
+.result{background:var(--red);color:var(--ivory);border:none;}
+.result .rlabel{font-size:12px;font-weight:700;opacity:.85;}
+.result .rrange{font-family:"Noto Sans JP",sans-serif;font-weight:700;font-size:clamp(23px,7.2vw,33px);line-height:1.18;margin:6px 0 2px;letter-spacing:-.01em;}
+.result .rrange .tilde{opacity:.8;font-weight:500;margin:0 4px;}
+.bound{display:flex;justify-content:space-between;gap:10px;font-size:12px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(253,254,240,.25);}
+.bound .b-col b{display:block;font-size:16px;font-weight:700;margin-top:2px;}
+.bound .b-col.up{text-align:right;}
+.result .rmeta{margin-top:12px;padding-top:11px;border-top:1px solid rgba(253,254,240,.25);display:flex;justify-content:space-between;gap:10px;font-size:12px;opacity:.95;}
+.result .rmeta b{display:block;font-size:16px;font-weight:700;margin-top:2px;}
+.chartbox svg{width:100%;height:140px;display:block;}
+.caution{background:#FBE9D8;border:1px solid #E8C9A8;color:#8A4B1D;border-radius:12px;padding:10px 12px;font-size:12px;font-weight:700;margin-bottom:16px;}
+.note{color:var(--muted);font-size:11px;line-height:1.6;margin-top:2px;}
+.hidden{display:none;}
+.foot{text-align:center;color:var(--muted);font-size:10.5px;margin-top:18px;line-height:1.6;}
+.foot .wm{font-family:"Cormorant Garamond",Georgia,serif;font-size:15px;color:var(--red);font-weight:700;}
+</style>
+</head>
+<body>
+<header>
+  <div class="brandwrap">
+    <div class="wordmark">ONI &amp; Co.</div>
+    <div class="app-title">売上 着地予測</div>
+    <div class="app-sub">現時点の売上から終日の着地レンジを予測します</div>
+  </div>
+</header>
+<div class="wrap">
+  <div class="card">
+    <div class="field">
+      <label>日付 <span id="wdBadge" class="weekday-badge">—</span></label>
+      <input type="date" id="dateIn">
+    </div>
+    <div class="field">
+      <label>現在の時刻</label>
+      <input type="time" id="timeIn">
+    </div>
+    <div class="field">
+      <label>現時点の売上（税込・レジ別）</label>
+      <div class="reg-grid">
+        <div class="reg-cell"><span class="reg-tag">1レジ</span><div class="amount-row"><input type="number" id="reg1" inputmode="numeric" placeholder="0"><span class="yen">円</span></div></div>
+        <div class="reg-cell"><span class="reg-tag">2レジ</span><div class="amount-row"><input type="number" id="reg2" inputmode="numeric" placeholder="0"><span class="yen">円</span></div></div>
+      </div>
+      <div class="total-row"><span>合計（税込）</span><b id="total">0円</b></div>
+    </div>
+  </div>
+
+  <div id="caution" class="caution hidden"></div>
+
+  <div id="result" class="card result hidden">
+    <div class="rlabel">終日売上予測（税抜）</div>
+    <div class="rrange" id="rrange">—</div>
+    <div class="bound">
+      <div class="b-col"><span>下限：実数値の推移</span><b id="bLow">—</b></div>
+      <div class="b-col up"><span>上限：機会損失なしの<br>ポテンシャル</span><b id="bHigh">—</b></div>
+    </div>
+    <div class="rmeta">
+      <div>この時点の完売率<b id="rrate">—</b></div>
+      <div style="text-align:right">予測倍率<b id="rmult">—</b></div>
+    </div>
+  </div>
+
+  <div id="chartCard" class="card hidden">
+    <label id="chartLabel">完売率カーブ</label>
+    <div class="chartbox"><div id="chart"></div></div>
+    <div class="note" id="chartNote"></div>
+  </div>
+
+  <div class="foot">
+    <div class="wm">ONI &amp; Co.</div>
+    <div id="footNote"></div>
+  </div>
+</div>
+<script>
+const DB={"meta":{"start":"2026-04-15","end":"2026-06-15"},"curves":{"日":{"days":9,"points":[{"t":"08:00","r":0},{"t":"09:00","r":11.7},{"t":"10:00","r":22.2},{"t":"11:00","r":31.9},{"t":"12:00","r":42.2},{"t":"13:00","r":50.7},{"t":"14:00","r":58.1},{"t":"15:00","r":63.6},{"t":"16:00","r":71.2},{"t":"17:00","r":82.4},{"t":"18:00","r":92.3},{"t":"19:00","r":97.9},{"t":"20:00","r":99.7},{"t":"21:00","r":100},{"t":"22:00","r":100},{"t":"23:00","r":100}],"oppRatio":0.103},"月":{"days":9,"points":[{"t":"08:00","r":0},{"t":"09:00","r":10.3},{"t":"10:00","r":21},{"t":"11:00","r":31.4},{"t":"12:00","r":41.8},{"t":"13:00","r":51.3},{"t":"14:00","r":57.7},{"t":"15:00","r":62.7},{"t":"16:00","r":69.2},{"t":"17:00","r":78.8},{"t":"18:00","r":88.2},{"t":"19:00","r":94.2},{"t":"20:00","r":97.5},{"t":"21:00","r":99.1},{"t":"22:00","r":100},{"t":"23:00","r":100}],"oppRatio":0.072},"火":{"days":8,"points":[{"t":"08:00","r":0},{"t":"09:00","r":9.6},{"t":"10:00","r":19.6},{"t":"11:00","r":28.4},{"t":"12:00","r":38.2},{"t":"13:00","r":45.6},{"t":"14:00","r":50.1},{"t":"15:00","r":54.6},{"t":"16:00","r":60.2},{"t":"17:00","r":68.7},{"t":"18:00","r":78.7},{"t":"19:00","r":87.2},{"t":"20:00","r":93.9},{"t":"21:00","r":97.6},{"t":"22:00","r":100},{"t":"23:00","r":100}],"oppRatio":0.032},"水":{"days":9,"points":[{"t":"08:00","r":0},{"t":"09:00","r":11.6},{"t":"10:00","r":21.5},{"t":"11:00","r":30.5},{"t":"12:00","r":39.9},{"t":"13:00","r":48.2},{"t":"14:00","r":53.8},{"t":"15:00","r":58.5},{"t":"16:00","r":63.8},{"t":"17:00","r":71.8},{"t":"18:00","r":80.5},{"t":"19:00","r":88.7},{"t":"20:00","r":94.4},{"t":"21:00","r":98},{"t":"22:00","r":100},{"t":"23:00","r":100}],"oppRatio":0.039},"木":{"days":9,"points":[{"t":"08:00","r":0},{"t":"09:00","r":11.5},{"t":"10:00","r":22.1},{"t":"11:00","r":32.1},{"t":"12:00","r":42.9},{"t":"13:00","r":51.2},{"t":"14:00","r":56.1},{"t":"15:00","r":60.2},{"t":"16:00","r":65.4},{"t":"17:00","r":73.1},{"t":"18:00","r":82.6},{"t":"19:00","r":90.3},{"t":"20:00","r":95.7},{"t":"21:00","r":98.6},{"t":"22:00","r":100},{"t":"23:00","r":100}],"oppRatio":0.067},"金":{"days":9,"points":[{"t":"08:00","r":0},{"t":"09:00","r":11.6},{"t":"10:00","r":22.5},{"t":"11:00","r":32},{"t":"12:00","r":42.2},{"t":"13:00","r":51.8},{"t":"14:00","r":57.6},{"t":"15:00","r":62},{"t":"16:00","r":66.4},{"t":"17:00","r":75.5},{"t":"18:00","r":84.3},{"t":"19:00","r":91.9},{"t":"20:00","r":96.7},{"t":"21:00","r":99.1},{"t":"22:00","r":100},{"t":"23:00","r":100}],"oppRatio":0.097},"土":{"days":9,"points":[{"t":"08:00","r":0},{"t":"09:00","r":16.7},{"t":"10:00","r":31.3},{"t":"11:00","r":40.9},{"t":"12:00","r":48.6},{"t":"13:00","r":57.6},{"t":"14:00","r":63.4},{"t":"15:00","r":67.3},{"t":"16:00","r":71.9},{"t":"17:00","r":79.9},{"t":"18:00","r":87.5},{"t":"19:00","r":93.8},{"t":"20:00","r":97.4},{"t":"21:00","r":99.3},{"t":"22:00","r":100},{"t":"23:00","r":100}],"oppRatio":0.113}}};
+const DAY=["日","月","火","水","木","金","土"];
+const $=id=>document.getElementById(id);
+const fmt=n=>Math.round(n).toLocaleString("ja-JP");
+const toMin=t=>{const m=String(t).match(/(\d{1,2}):(\d{2})/);return m?+m[1]*60+ +m[2]:null;};
+
+function rateAt(points,minutes){
+  if(minutes==null) return null;
+  const pts=points.map(p=>({m:toMin(p.t),r:p.r}));
+  if(minutes<=pts[0].m) return 0;
+  if(minutes>=pts[pts.length-1].m) return 100;
+  for(let i=0;i<pts.length-1;i++){
+    const a=pts[i],b=pts[i+1];
+    if(minutes>=a.m&&minutes<=b.m){const f=(minutes-a.m)/(b.m-a.m||1);return a.r+(b.r-a.r)*f;}
+  }
+  return 100;
+}
+function miniChart(points,markMin,markRate){
+  const W=440,H=140,p={l:30,r:10,t:14,b:22};
+  const xs=points.map(pt=>toMin(pt.t)),x0=xs[0],x1=xs[xs.length-1];
+  const X=m=>p.l+(W-p.l-p.r)*(m-x0)/(x1-x0||1);
+  const Y=r=>p.t+(H-p.t-p.b)*(1-r/100);
+  let s='<svg viewBox="0 0 '+W+' '+H+'" xmlns="http://www.w3.org/2000/svg">';
+  s+='<defs><linearGradient id="g" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B8484D" stop-opacity=".26"/><stop offset="1" stop-color="#B8484D" stop-opacity=".02"/></linearGradient></defs>';
+  [0,50,100].forEach(v=>{s+='<line x1="'+p.l+'" x2="'+(W-p.r)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="#EFE8DB"/><text x="'+(p.l-6)+'" y="'+(Y(v)+4)+'" text-anchor="end" font-size="10" fill="#8A7E72" font-family="sans-serif">'+v+'%</text>';});
+  const line=points.map(pt=>X(toMin(pt.t))+','+Y(pt.r)).join(" ");
+  s+='<polygon points="'+line+' '+X(x1)+','+Y(0)+' '+X(x0)+','+Y(0)+'" fill="url(#g)"/>';
+  s+='<polyline points="'+line+'" fill="none" stroke="#B8484D" stroke-width="2.4" stroke-linejoin="round"/>';
+  points.forEach((pt,i)=>{if(i%2===0||i===points.length-1)s+='<text x="'+X(toMin(pt.t))+'" y="'+(H-7)+'" text-anchor="middle" font-size="9" fill="#8A7E72" font-family="sans-serif">'+pt.t+'</text>';});
+  if(markMin!=null&&markRate!=null){const mx=X(markMin),my=Y(markRate);
+    s+='<line x1="'+mx+'" x2="'+mx+'" y1="'+p.t+'" y2="'+(H-p.b)+'" stroke="#8C1D23" stroke-width="1.4" stroke-dasharray="5 4"/>';
+    s+='<circle cx="'+mx+'" cy="'+my+'" r="5" fill="#8C1D23"/>';
+    s+='<text x="'+mx+'" y="'+(p.t-3)+'" text-anchor="middle" font-size="11" font-weight="700" fill="#8C1D23" font-family="sans-serif">'+markRate.toFixed(0)+'%</text>';}
+  s+='</svg>';return s;
+}
+
+function update(){
+  const dv=$("dateIn").value, tv=$("timeIn").value;
+  const r1=Number($("reg1").value)||0, r2=Number($("reg2").value)||0, incl=r1+r2;
+  $("total").textContent=fmt(incl)+"円";
+  const wd=dv?DAY[new Date(dv+"T12:00:00").getDay()]:null;
+  $("wdBadge").textContent=wd?wd+"曜日":"—";
+  const c=wd&&DB.curves[wd];
+  $("caution").classList.add("hidden");
+  if(!c){$("result").classList.add("hidden");$("chartCard").classList.add("hidden");return;}
+  const minutes=toMin(tv), rate=rateAt(c.points,minutes);
+  $("chartCard").classList.remove("hidden");
+  $("chartLabel").textContent=wd+"曜日の時間帯完売率カーブ（過去"+c.days+"日平均）";
+  $("chart").innerHTML=miniChart(c.points,minutes,rate);
+  $("chartNote").textContent="赤い縦線が入力時刻。曲線は「その時刻までの累計売上 ÷ 終日売上」の平均。";
+  if(incl<=0||rate==null){$("result").classList.add("hidden");return;}
+  if(rate<5){$("result").classList.add("hidden");$("caution").textContent="開店直後は売上が少なく予測が不安定です。もう少し時間が経ってからご利用ください。";$("caution").classList.remove("hidden");return;}
+  const mult=100/rate;
+  const excl=incl/1.08;
+  const low=excl*mult;                    // 実数値の推移（下限）
+  const high=low*(1+(c.oppRatio||0));     // 機会損失なしのポテンシャル（上限）
+  $("rrange").innerHTML=fmt(low)+'<span class="tilde">〜</span>'+fmt(high)+'円';
+  $("bLow").textContent=fmt(low)+"円";
+  $("bHigh").textContent=fmt(high)+"円";
+  $("rrate").textContent=rate.toFixed(1)+"%";
+  $("rmult").textContent="×"+mult.toFixed(2);
+  $("result").classList.remove("hidden");
+  if(rate<15){$("caution").textContent="この時刻はまだ完売率が低く（"+rate.toFixed(0)+"%）、予測の振れ幅が大きめです。目安としてご覧ください。";$("caution").classList.remove("hidden");}
+}
+
+(function(){
+  const now=new Date(),pad=n=>String(n).padStart(2,"0");
+  $("dateIn").value=now.getFullYear()+"-"+pad(now.getMonth()+1)+"-"+pad(now.getDate());
+  $("timeIn").value=pad(now.getHours())+":"+pad(now.getMinutes());
+  $("footNote").innerHTML="グランスタ東京の実績（"+DB.meta.start.replaceAll("-","/")+"〜"+DB.meta.end.replaceAll("-","/")+"）の曜日別カーブ＋機会損失モデルから算出。<br>入力は税込・予測は税抜。あくまで目安です。";
+  ["dateIn","timeIn","reg1","reg2"].forEach(id=>$(id).addEventListener("input",update));
+  update();
+})();
+</script>
+</body>
+</html>
