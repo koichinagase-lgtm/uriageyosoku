@@ -28,7 +28,12 @@ header{background:var(--red);color:var(--ivory);padding:calc(18px + env(safe-are
 label{display:block;font-size:12px;font-weight:700;color:var(--muted);margin:0 0 7px;}
 .field{margin-bottom:16px;}
 .field:last-child{margin-bottom:0;}
-input[type="date"],input[type="time"],input[type="number"]{width:100%;border:1.5px solid var(--line);border-radius:12px;padding:14px;font-size:17px;color:var(--ink);background:var(--rice);font-family:inherit;font-weight:700;}
+input[type="date"],input[type="time"],input[type="number"]{display:block;width:100%;border:1.5px solid var(--line);border-radius:12px;padding:14px;font-size:16px;color:var(--ink);background:var(--rice);font-family:inherit;font-weight:700;}
+/* iOSの日付・時刻入力がボックスからはみ出る問題への対応 */
+input[type="date"],input[type="time"]{-webkit-appearance:none;appearance:none;min-width:0;min-height:52px;text-align:left;line-height:normal;}
+input[type="date"]::-webkit-date-and-time-value,input[type="time"]::-webkit-date-and-time-value{text-align:left;margin:0;padding:0;}
+input[type="date"]::-webkit-calendar-picker-indicator,input[type="time"]::-webkit-calendar-picker-indicator{margin-left:auto;opacity:.55;}
+input::-webkit-inner-spin-button,input::-webkit-clear-button{display:none;-webkit-appearance:none;}
 input:focus{outline:none;border-color:var(--red);background:#fff;}
 .weekday-badge{display:inline-block;margin-left:8px;padding:2px 10px;border-radius:99px;background:var(--red);color:var(--ivory);font-size:12px;font-weight:700;vertical-align:middle;}
 .reg-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
@@ -130,7 +135,7 @@ function rateAt(points,minutes){
   return 100;
 }
 function miniChart(points,markMin,markRate){
-  const W=440,H=140,p={l:30,r:10,t:14,b:22};
+  const W=448,H=140,p={l:38,r:10,t:14,b:22};
   const xs=points.map(pt=>toMin(pt.t)),x0=xs[0],x1=xs[xs.length-1];
   const X=m=>p.l+(W-p.l-p.r)*(m-x0)/(x1-x0||1);
   const Y=r=>p.t+(H-p.t-p.b)*(1-r/100);
